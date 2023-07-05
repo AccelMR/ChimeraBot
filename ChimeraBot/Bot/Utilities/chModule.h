@@ -19,7 +19,8 @@
  * Includes
  */
 /*****************************************************************************/
-//#include "chPrerequisitesUtilities.h"
+#include "chPrerequisitesUtilities.h"
+#include "chException.h"
 
 namespace chEngineSDK {
 /**

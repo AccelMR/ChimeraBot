@@ -1,6 +1,14 @@
-﻿// Bot.h : Include file for standard system include files,
-// or project specific include files.
-
 #pragma once
 
-#include <iostream>
+#include <dpp/dpp.h>
+
+namespace chBot {
+class Bot {
+ public:
+   Bot(const dpp::snowflake& snowflake);
+   ~Bot();
+
+ private:
+   dpp::snowflake m_id;
+};
+}
