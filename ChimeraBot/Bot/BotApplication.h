@@ -19,8 +19,16 @@ class BotApp: public chEngineSDK::Module<BotApp> {
   void
   init(chEngineSDK::String token);
 
+  void 
+  run();
+
+  void
+  setDirty();
+
  private:
   chEngineSDK::SPtr<dpp::cluster> m_discordBot;
+  bool m_isRunning = true;
+  bool m_isDirty = false;
 };
 
 }

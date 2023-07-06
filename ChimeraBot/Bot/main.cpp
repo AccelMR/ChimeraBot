@@ -1,19 +1,21 @@
 #include <iostream>
 
+#include "chCommandArguments.h"
 #include "BotApplication.h"
 #include "BotManager.h"
 
 int main(int argc, char* argv[]) {
-  if (argc < 2) {
-    std::cerr << "Please provide the bot token as an argument." << std::endl;
-    return 1;
-  }
 
-  std::string BOT_TOKEN = argv[1];
+  CmdParser::getInstance().parse(argc, argv);
+
+  const chEngineSDK::String BOT_TOKEN = CmdParser::getInstance().getParam("token");
+
 
   chBot::BotApp::startUp();
   chBot::BotManager::startUp();
   chBot::BotApp::instance().init(BOT_TOKEN);
+
+  chBot::BotApp::instance().run();
 
   return 0;
 }

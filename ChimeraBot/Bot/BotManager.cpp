@@ -1,5 +1,7 @@
 #include "BotManager.h"
 
+#include <dpp/dpp.h>
+#include "Bot.h"
 
 namespace chBot {
 
