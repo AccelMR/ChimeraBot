@@ -26,6 +26,11 @@ class BotApp: public chEngineSDK::Module<BotApp> {
   setDirty();
 
  private:
+
+   void
+   notifyOwner();
+
+ private:
   chEngineSDK::SPtr<dpp::cluster> m_discordBot;
   bool m_isRunning = true;
   bool m_isDirty = false;

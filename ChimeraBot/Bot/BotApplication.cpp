@@ -1,11 +1,14 @@
 #include "BotApplication.h"
 #include "BotManager.h"
 #include "chCommandArguments.h"
+#include "chDebug.h"
 
 #include <dpp/dpp.h>
 
 
 namespace chBot {
+using namespace chEngineSDK;
+
 BotApp::BotApp() {}
 
 BotApp::~BotApp() {}
@@ -21,7 +24,7 @@ void BotApp::init(chEngineSDK::String token) {
   });
 
   m_discordBot->on_ready([this](const dpp::ready_t& event) {
-    this->notifyOwner();
+    notifyOwner();
   });
 
   m_discordBot->start();
@@ -47,7 +50,7 @@ void BotApp::notifyOwner() {
 
   m_discordBot->create_dm_channel(OWNER_ID, [this](const dpp::confirmation_callback_t& confirmation) {
     if (confirmation.is_error()) {
-      std::cout << confirmation.get_error().message << "\n";
+      LOG_ERROR(confirmation.get_error().message);
       return;
     }
 
@@ -56,7 +59,7 @@ void BotApp::notifyOwner() {
     dpp::message msg(channel.id, "Bot is online!");
     m_discordBot->message_create(msg, [](const dpp::confirmation_callback_t& confirmation) {
       if (confirmation.is_error()) {
-        std::cout << confirmation.get_error().message << "\n";
+        LOG_ERROR(confirmation.get_error().message);
         return;
       }
     });

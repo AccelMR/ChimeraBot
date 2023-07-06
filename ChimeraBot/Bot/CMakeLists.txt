@@ -8,9 +8,7 @@ file(GLOB UTILITIES "Utilities/*.cpp" "Utilities/*.h")
 # Add source to this project's executable.
 add_executable (Bot "main.cpp" ${UTILITIES} "BotManager.h" "BotManager.cpp" "BotApplication.h" "BotApplication.cpp" "Bot.cpp" "Bot.h")
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Bot PROPERTY CXX_STANDARD 20)
-endif()
+target_compile_definitions(Bot PRIVATE CH_UTILITY_EXPORTS)
 
 find_package(dpp CONFIG REQUIRED)
 
