@@ -41,10 +41,25 @@ For information on how to link to the DPP library, see the [official DPP documen
 <br />
 <br />
 
-## Running ChimeraBot
-To be completed with instructions on how to run the bot after installation is complete.
+## Usage
+
+To run the ChimeraBot, you will need to pass `-token=BOT_ID` as a command-line argument. The `BOT_ID` is necessary for the bot to operate properly. 
+
+Example:
+```bash
+./ChimeraBot -token=YOUR_BOT_ID
+```
+## Optional Arguments
+ChimeraBot also supports an optional -ownerID=OWNER_ID command-line argument. If provided, the bot will send a direct message to the OWNER_ID to notify that the bot is online.
+
+Example: 
+```bash
+./ChimeraBot -token=YOUR_BOT_ID -ownerID=YOUR_OWNER_ID
+```
 
 <br />
 <br />
 
 # Contributing
+
+
