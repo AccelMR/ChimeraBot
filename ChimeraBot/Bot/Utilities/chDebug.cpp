@@ -53,7 +53,7 @@ void
 Debug::logMessage(const String& msg, LOG_LEVEL level) {
   m_log.logMsg(msg, level);
   //auto logMsg = StringUtils::format("[{}] {}", LOG_LEVEL_NAMES[static_cast<int32>(level)], msg);
-  auto logMsg = String("[{" + LOG_LEVEL_NAMES[static_cast<int32>(level)] + "}] {" + msg + "}");
+  auto logMsg = String("[" + LOG_LEVEL_NAMES[static_cast<int32>(level)] + "]\t" + msg);
   logIDEConsole(logMsg);
 }
 

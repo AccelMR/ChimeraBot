@@ -22,6 +22,9 @@ class BotManager: public chEngineSDK::Module<BotManager> {
   chEngineSDK::SPtr<Bot>
   getBot(const dpp::snowflake& snowflake);
 
+  void
+  dispatchCommands();
+
  private:
   chEngineSDK::Map<dpp::snowflake, chEngineSDK::SPtr<Bot> > m_botInstances;
 };

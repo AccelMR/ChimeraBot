@@ -19,10 +19,13 @@ int main(int argc, char* argv[]) {
   }
 
   chBot::BotApp::startUp();
-  chBot::BotManager::startUp();
-  chBot::BotApp::instance().init(BOT_TOKEN);
 
+  LOG_INFO("Token ID = " + BOT_TOKEN);
+  chBot::BotApp::instance().init(BOT_TOKEN);
   chBot::BotApp::instance().run();
+
+  chBot::BotApp::shutDown();
+
 
   return 0;
 }

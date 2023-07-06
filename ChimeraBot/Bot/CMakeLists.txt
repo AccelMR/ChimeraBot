@@ -6,7 +6,7 @@
 file(GLOB UTILITIES "Utilities/*.cpp" "Utilities/*.h")
 
 # Add source to this project's executable.
-add_executable (Bot "main.cpp" ${UTILITIES} "BotManager.h" "BotManager.cpp" "BotApplication.h" "BotApplication.cpp" "Bot.cpp" "Bot.h" "ErrorCodes.h")
+add_executable (Bot "main.cpp" ${UTILITIES} "BotManager.h" "BotManager.cpp" "BotApplication.h" "BotApplication.cpp" "Bot.cpp" "Bot.h" "ErrorCodes.h" "Command.h" "Command.cpp")
 
 target_compile_definitions(Bot PRIVATE CH_UTILITY_EXPORTS)
 
