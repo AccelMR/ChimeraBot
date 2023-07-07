@@ -3,7 +3,6 @@
 #include "ErrorCodes.h"
 #include "chCommandArguments.h"
 #include "BotApplication.h"
-#include "BotManager.h"
 #include "chDebug.h"
 
 using namespace chEngineSDK;

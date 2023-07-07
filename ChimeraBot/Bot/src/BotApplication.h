@@ -48,7 +48,6 @@ class BotApp: public chEngineSDK::Module<BotApp> {
   std::thread m_commandDispatcher;
   std::mutex m_queueMutex; 
   std::queue<std::pair<std::unique_ptr<dpp::slashcommand_t>, chEngineSDK::SPtr<BaseCommand>>> m_commandQueue;
-  chEngineSDK::Map<chEngineSDK::String, std::function<chEngineSDK::SPtr<BaseCommand>()>> m_loadedCommands;
 
 };
 

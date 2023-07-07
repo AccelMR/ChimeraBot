@@ -1,6 +1,9 @@
-#include "Command.h"
+#include "PingCommand.h"
 
 namespace chBot {
+const chEngineSDK::String PingCommand::NAME = "PING";
+const chEngineSDK::String PingCommand::DESCRIPTION = "Check connection to the Bot.";
+
 std::function<void(const dpp::slashcommand_t&)> 
 PingCommand::getCallback() const {
   return [](const dpp::slashcommand_t& event) {
@@ -17,12 +20,12 @@ PingCommand::getOptions() const {
 
 chEngineSDK::String 
 PingCommand::getName() const {
-  return "Ping";
+  return NAME;
 }
 
 chEngineSDK::String 
 PingCommand::getDescription() const {
-  return "Check connection to the Bot.";
+  return DESCRIPTION;
 }
 
 chEngineSDK::Vector<chEngineSDK::String> 

@@ -33,24 +33,6 @@ class BaseCommand{
   getCallback() const = 0;
 };
 
-class PingCommand : public BaseCommand {
-  std::function<void(const dpp::slashcommand_t&)> 
-  getCallback() const override;
-
-  // Inherited via BaseCommand
-  virtual std::vector<dpp::command_option> 
-  getOptions() const override;
-
-  virtual chEngineSDK::String 
-  getName() const override;
-
-  virtual chEngineSDK::String 
-  getDescription() const override;
-
-  virtual chEngineSDK::Vector<chEngineSDK::String> 
-  getExclusiveGuilds() const override;
-};
-
 }
 
 
