@@ -10,8 +10,9 @@ command_name_regex = re.compile(r'const\s+chEngineSDK::String\s+(\w+)::NAME\s+=\
 
 def process_file(filename):
     # Extract command name from filename
-    command_name = os.path.basename(filename)[:-4]  # Example: PingCommand
-    command_type = command_name[:-7].upper()  # Example: PING
+    base_name = os.path.basename(filename)
+    command_name = os.path.splitext(base_name)[0]  # Example: PingCommand
+    command_type = command_name.split("Command")[0].upper()  # Example: PING
 
     # Add to the command types
     command_types.append(command_type)
@@ -25,7 +26,6 @@ def process_file(filename):
             match = command_name_regex.match(line.strip())
             if match:
                 # If it does, extract the command type and name
-                command_type = match.group(1)[:-7].upper()  # Remove "Command" and convert to upper case
                 command_name = match.group(2).lower()
 
                 # Add the mapping to the command name to type list
