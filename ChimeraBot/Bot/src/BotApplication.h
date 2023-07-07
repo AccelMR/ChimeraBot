@@ -9,6 +9,7 @@
 namespace dpp {
   class cluster;
   struct slashcommand_t;
+  struct ready_t;
 }
 
 namespace chBot {
@@ -40,6 +41,12 @@ class BotApp: public chEngineSDK::Module<BotApp> {
 
   void
   commandDispatcherThread();
+
+  void
+  loadCommands();
+
+  void
+  onClusterReady(const dpp::ready_t& event);
 
  private:
   chEngineSDK::SPtr<dpp::cluster> m_discordBot;

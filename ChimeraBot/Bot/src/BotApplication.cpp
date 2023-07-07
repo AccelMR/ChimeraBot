@@ -26,37 +26,11 @@ BotApp::init(const chEngineSDK::String& token) {
 
   m_discordBot = chEngineSDK::ch_shared_ptr_new<dpp::cluster>(token);
 
+  //Bind all functions
   //TDOO: make own logger
   m_discordBot->on_log(dpp::utility::cout_logger());
-
-  m_discordBot->on_guild_create([](const dpp::guild_create_t& guild) {
-  });
-
-  m_discordBot->on_ready([this](const dpp::ready_t& event) {
-    notifyOwner();
-
-    if (dpp::run_once<struct register_bot_commands>()) {
-      for (auto& [type, command] : LOADED_COMMANDS) {
-        auto commandInstance = command();  // Call the CommandCreator function to create an instance
-        auto exclusiveGuilds = commandInstance->getExclusiveGuilds();
-
-        auto newCommand = dpp::slashcommand(commandInstance->getName(), commandInstance->getDescription(), m_discordBot->me.id);
-        if (exclusiveGuilds.empty()) {
-          m_discordBot->global_command_create(newCommand);
-        }
-        else {
-          for (const auto& guildID : exclusiveGuilds) {
-            m_discordBot->guild_command_create(newCommand, guildID);
-          }
-        }
-      }
-    }
-
-
-    //Execute Listener
-    m_commandDispatcher = std::thread(&BotApp::commandDispatcherThread, this);
-  });
-
+  m_discordBot->on_guild_create([](const dpp::guild_create_t& guild) {});
+  m_discordBot->on_ready(std::bind(&BotApp::onClusterReady, this, std::placeholders::_1));
   m_discordBot->on_slashcommand(std::bind(&BotApp::onSlashCommand, this, std::placeholders::_1));
 
   try {
@@ -108,17 +82,17 @@ void BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
 
   // Find the command in the map
   auto it = COMMAND_NAME_TO_TYPE.find(commandName);
-  if (it != COMMAND_NAME_TO_TYPE.end()) {
-    // Create a new instance of the command
-    auto commandInstance = LOADED_COMMANDS[it->second]();
+  if (it == COMMAND_NAME_TO_TYPE.end()) {
+    LOG_WARN("Command [" + commandName + "]" + " was not found.");
+    return;
+  }
 
-    // Command found, lock the mutex and push it to the queue
-    std::lock_guard<std::mutex> guard(m_queueMutex);
-    m_commandQueue.emplace(std::make_pair(std::make_unique<dpp::slashcommand_t>(slashCommand), commandInstance));
-  }
-  else {
-    // Command not found, handle error
-  }
+  // Create a new instance of the command
+  auto commandInstance = LOADED_COMMANDS[it->second]();
+
+  // Command found, lock the mutex and push it to the queue
+  std::lock_guard<std::mutex> guard(m_queueMutex);
+  m_commandQueue.emplace(std::make_pair(std::make_unique<dpp::slashcommand_t>(slashCommand), commandInstance));
 }
 
 void BotApp::commandDispatcherThread() {
@@ -131,6 +105,7 @@ void BotApp::commandDispatcherThread() {
         m_commandQueue.pop();
       }
       catch (const std::exception& e) {
+        LOG_ERROR(e.what());
       }
     }
 
@@ -141,6 +116,36 @@ void BotApp::commandDispatcherThread() {
 
     //Clear pointer
     commandEventPairOpt.reset();
+  }
+}
+
+void 
+BotApp::loadCommands() {
+  for (auto& [type, command] : LOADED_COMMANDS) {
+    auto commandInstance = command();  // Call the CommandCreator function to create an instance
+    auto exclusiveGuilds = commandInstance->getExclusiveGuilds();
+
+    auto newCommand = dpp::slashcommand(commandInstance->getName(), commandInstance->getDescription(), m_discordBot->me.id);
+    if (exclusiveGuilds.empty()) {
+      m_discordBot->global_command_create(newCommand);
+    }
+    else {
+      for (const auto& guildID : exclusiveGuilds) {
+        m_discordBot->guild_command_create(newCommand, guildID);
+      }
+    }
+  }
+}
+
+void 
+BotApp::onClusterReady(const dpp::ready_t& event) {
+  notifyOwner();
+
+  //AS far as I know this on_ready should not be called more than once, but not sure. That's why I left this part.
+  if (dpp::run_once<struct register_bot_commands>()) {
+    loadCommands();
+    //Execute Listener thread
+    m_commandDispatcher = std::thread(&BotApp::commandDispatcherThread, this);
   }
 }
 
