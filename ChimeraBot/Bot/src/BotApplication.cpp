@@ -12,8 +12,24 @@
 namespace chBot {
 using namespace chEngineSDK;
 
+/*
+*/
+bool 
+checkIfError(const dpp::confirmation_callback_t& confirmation) {
+  if (confirmation.is_error()) {
+    LOG_ERROR(confirmation.get_error().message);
+    return true;
+  }
+  return false;
+}
+
+
+/*
+*/
 BotApp::BotApp() {}
 
+/*
+*/
 BotApp::~BotApp() {
   m_isDispatcherRunning = false; // Inform the thread to stop looping
   if (m_commandDispatcher.joinable()) {
@@ -21,14 +37,15 @@ BotApp::~BotApp() {
   }
 }
 
+/*
+*/
 void 
 BotApp::init(const chEngineSDK::String& token) {
 
   m_discordBot = chEngineSDK::ch_shared_ptr_new<dpp::cluster>(token);
 
   //Bind all functions
-  //TDOO: make own logger
-  m_discordBot->on_log(dpp::utility::cout_logger());
+  m_discordBot->on_log(dpp::utility::cout_logger()); //TDOO: make own logger
   m_discordBot->on_guild_create([](const dpp::guild_create_t& guild) {});
   m_discordBot->on_ready(std::bind(&BotApp::onClusterReady, this, std::placeholders::_1));
   m_discordBot->on_slashcommand(std::bind(&BotApp::onSlashCommand, this, std::placeholders::_1));
@@ -41,43 +58,40 @@ BotApp::init(const chEngineSDK::String& token) {
   }
 }
 
+/*
+*/
 void 
 BotApp::run() {
   while (m_isRunning) {
   }
 }
 
+/*
+*/
 void 
 BotApp::setDirty() {
   m_isDirty = true;
 }
 
+/*
+*/
 void
 BotApp::notifyOwner() {
   const chEngineSDK::String OWNER_ID = CmdParser::getInstance().getParam("ownerid");
-  if (OWNER_ID.empty()) {
-    return;
-  }
+  if (OWNER_ID.empty()) { return; }
 
   m_discordBot->create_dm_channel(OWNER_ID, [this](const dpp::confirmation_callback_t& confirmation) {
-    if (confirmation.is_error()) {
-      LOG_ERROR(confirmation.get_error().message);
-      return;
-    }
+    if (checkIfError(confirmation)) { return; }
 
     dpp::channel channel = std::get<dpp::channel>(confirmation.value);
-
-    dpp::message msg(channel.id, "Bot is online!");
-    m_discordBot->message_create(msg, [](const dpp::confirmation_callback_t& confirmation) {
-      if (confirmation.is_error()) {
-        LOG_ERROR(confirmation.get_error().message);
-        return;
-      }
-    });
-   });
+    sendMessage(channel.id, "Bot is online!");
+  });
 }
 
-void BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
+/*
+*/
+void 
+BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
   chEngineSDK::String commandName = slashCommand.command.get_command_name();
 
   // Find the command in the map
@@ -95,6 +109,8 @@ void BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
   m_commandQueue.emplace(std::make_pair(std::make_unique<dpp::slashcommand_t>(slashCommand), commandInstance));
 }
 
+/*
+*/
 void BotApp::commandDispatcherThread() {
   while (m_isDispatcherRunning) {
     std::optional<ResponseCommandPair> commandEventPairOpt;
@@ -119,6 +135,8 @@ void BotApp::commandDispatcherThread() {
   }
 }
 
+/*
+*/
 void 
 BotApp::loadCommands() {
   for (auto& [type, command] : LOADED_COMMANDS) {
@@ -137,6 +155,8 @@ BotApp::loadCommands() {
   }
 }
 
+/*
+*/
 void 
 BotApp::onClusterReady(const dpp::ready_t& event) {
   notifyOwner();
@@ -148,5 +168,17 @@ BotApp::onClusterReady(const dpp::ready_t& event) {
     m_commandDispatcher = std::thread(&BotApp::commandDispatcherThread, this);
   }
 }
+
+/*
+*/
+void 
+BotApp::sendMessage(const dpp::snowflake channel_id, const std::string& message) {
+  std::lock_guard<std::mutex> lock(m_sendMessageMutex);
+  dpp::message msg(channel_id, message);
+  m_discordBot->message_create(msg, [](const dpp::confirmation_callback_t& confirmation) {
+    if (checkIfError(confirmation)) { return; }
+  });
+}
+
 
 }

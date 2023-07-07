@@ -31,6 +31,9 @@ class BotApp: public chEngineSDK::Module<BotApp> {
   void
   setDirty();
 
+  void
+  sendMessage(const dpp::snowflake channel_id, const chEngineSDK::String& message);
+
  private:
 
   void
@@ -56,6 +59,7 @@ class BotApp: public chEngineSDK::Module<BotApp> {
 
   std::thread m_commandDispatcher;
   std::mutex m_queueMutex; 
+  std::mutex m_sendMessageMutex;
   std::queue<ResponseCommandPair> m_commandQueue;
 
 };
