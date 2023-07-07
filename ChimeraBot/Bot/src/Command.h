@@ -7,7 +7,7 @@
 // Forward declaration of dpp::cluster
 namespace dpp {
   class cluster;
-  class slashcommand_t;
+  struct slashcommand_t;
   struct command_option;
 }
 

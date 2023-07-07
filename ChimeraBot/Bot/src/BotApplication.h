@@ -8,12 +8,14 @@
 // Forward declaration of dpp::cluster
 namespace dpp {
   class cluster;
-  class slashcommand_t;
+  struct slashcommand_t;
 }
 
 namespace chBot {
-
 class BaseCommand;
+
+typedef std::pair<std::unique_ptr<dpp::slashcommand_t>, chEngineSDK::SPtr<BaseCommand>> ResponseCommandPair;
+
 class BotApp: public chEngineSDK::Module<BotApp> {
  public:
   BotApp();
@@ -47,7 +49,7 @@ class BotApp: public chEngineSDK::Module<BotApp> {
 
   std::thread m_commandDispatcher;
   std::mutex m_queueMutex; 
-  std::queue<std::pair<std::unique_ptr<dpp::slashcommand_t>, chEngineSDK::SPtr<BaseCommand>>> m_commandQueue;
+  std::queue<ResponseCommandPair> m_commandQueue;
 
 };
 

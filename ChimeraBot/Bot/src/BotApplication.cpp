@@ -2,9 +2,9 @@
 
 #include <optional>
 
+#include "Command.h"
 #include "chCommandArguments.h"
 #include "chDebug.h"
-#include "Command.h"
 #include "PingCommand.h"
 #include "CommandTypes.h"
 
@@ -15,8 +15,9 @@ using namespace chEngineSDK;
 BotApp::BotApp() {}
 
 BotApp::~BotApp() {
+  m_isDispatcherRunning = false; // Inform the thread to stop looping
   if (m_commandDispatcher.joinable()) {
-    m_commandDispatcher.join();
+    m_commandDispatcher.join(); // Wait for the thread to finish
   }
 }
 
@@ -39,17 +40,13 @@ BotApp::init(const chEngineSDK::String& token) {
         auto commandInstance = command();  // Call the CommandCreator function to create an instance
         auto exclusiveGuilds = commandInstance->getExclusiveGuilds();
 
+        auto newCommand = dpp::slashcommand(commandInstance->getName(), commandInstance->getDescription(), m_discordBot->me.id);
         if (exclusiveGuilds.empty()) {
-          m_discordBot->global_command_create(
-            dpp::slashcommand(commandInstance->getName(), commandInstance->getDescription(), m_discordBot->me.id)
-          );
+          m_discordBot->global_command_create(newCommand);
         }
         else {
           for (const auto& guildID : exclusiveGuilds) {
-            m_discordBot->guild_command_create(
-              dpp::slashcommand(commandInstance->getName(), commandInstance->getDescription(), m_discordBot->me.id),
-              guildID
-            );
+            m_discordBot->guild_command_create(newCommand, guildID);
           }
         }
       }
@@ -122,17 +119,18 @@ void BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
   else {
     // Command not found, handle error
   }
-
 }
 
 void BotApp::commandDispatcherThread() {
   while (m_isDispatcherRunning) {
-    std::optional<std::pair<std::unique_ptr<dpp::slashcommand_t>, chEngineSDK::SPtr<BaseCommand>>> commandEventPairOpt;
+    std::optional<ResponseCommandPair> commandEventPairOpt;
     {
       std::lock_guard<std::mutex> guard(m_queueMutex);
-      if (!m_commandQueue.empty()) {
+      try {
         commandEventPairOpt = std::make_optional(std::move(m_commandQueue.front()));
         m_commandQueue.pop();
+      }
+      catch (const std::exception& e) {
       }
     }
 
@@ -141,6 +139,8 @@ void BotApp::commandDispatcherThread() {
       commandEventPair.second->getCallback()(*commandEventPair.first);
     }
 
+    //Clear pointer
+    commandEventPairOpt.reset();
   }
 }
 
