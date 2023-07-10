@@ -113,6 +113,8 @@ BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
 */
 void BotApp::commandDispatcherThread() {
   while (m_isDispatcherRunning) {
+    if(m_commandQueue.empty()) continue;
+
     std::optional<ResponseCommandPair> commandEventPairOpt;
     {
       std::lock_guard<std::mutex> guard(m_queueMutex);
