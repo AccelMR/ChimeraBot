@@ -12,6 +12,13 @@
 namespace chBot {
 using namespace chEngineSDK;
 
+
+SPtr<BaseCommand>
+createCommandInstance(const CommandType& type) {
+  // Create a new instance of the command
+  return LOADED_COMMANDS[type]();
+}
+
 /*
 */
 bool 
@@ -101,8 +108,8 @@ BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
     return;
   }
 
-  // Create a new instance of the command
-  auto commandInstance = LOADED_COMMANDS[it->second]();
+  const CommandType commandType = it->second;
+  SPtr<BaseCommand> commandInstance = createCommandInstance(commandType);
 
   // Command found, lock the mutex and push it to the queue
   std::lock_guard<std::mutex> guard(m_queueMutex);
