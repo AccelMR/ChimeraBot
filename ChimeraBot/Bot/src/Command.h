@@ -7,11 +7,12 @@
 // Forward declaration of dpp::cluster
 namespace dpp {
   class cluster;
-  struct slashcommand_t;
+  struct interaction_create_t;
   struct command_option;
 }
 
 namespace chBot {
+using InteractionCallback = std::function<void(const dpp::interaction_create_t&)>;
 class BaseCommand{
  public:
   BaseCommand() {}
@@ -19,6 +20,9 @@ class BaseCommand{
 
   virtual std::vector<dpp::command_option>
   getOptions() const = 0;
+
+  virtual dpp::slashcommand_contextmenu_type
+  getType() const = 0;
 
   virtual chEngineSDK::String
   getName() const = 0;
@@ -29,7 +33,7 @@ class BaseCommand{
   virtual chEngineSDK::Vector<chEngineSDK::String>
   getExclusiveGuilds() const = 0;
 
-  virtual std::function<void(const dpp::slashcommand_t&)> 
+  virtual InteractionCallback
   getCallback() const = 0;
 };
 

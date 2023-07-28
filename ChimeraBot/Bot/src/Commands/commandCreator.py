@@ -10,7 +10,13 @@ namespace chBot {{
 
 class {0}Command: public BaseCommand {{
  public:
+  {0}(const dpp::interaction_create_t& event) 
+    : m_event(event) {} //You should change this parameter if the data is different than dpp::interaction_create_t
+
   // Inherited via BaseCommand
+  virtual dpp::slashcommand_contextmenu_type
+  getType() const override;
+
   virtual 
   std::vector<dpp::command_option> getOptions() const override;
 
@@ -23,13 +29,15 @@ class {0}Command: public BaseCommand {{
   virtual chEngineSDK::Vector<chEngineSDK::String> 
   getExclusiveGuilds() const override;
 
-  virtual std::function<void(const dpp::slashcommand_t&)> 
+  virtual InteractionCallback 
   getCallback() const override;
 
-public:
+ public:
   static const chEngineSDK::String NAME;
   static const chEngineSDK::String DESCRIPTION;
   static const chEngineSDK::Vector<chEngineSDK::String> EXCLUSIVE_GUILDS;
+ private:
+  dpp::interaction_create_t m_event;
 }};
 
 }}
@@ -43,6 +51,13 @@ namespace chBot {{
 const chEngineSDK::String {0}Command::NAME = "{1}";
 const chEngineSDK::String {0}Command::DESCRIPTION = "Description.";
 const chEngineSDK::Vector<chEngineSDK::String> {0}Command::EXCLUSIVE_GUILDS = {{}};
+
+/*
+*/
+dpp::slashcommand_contextmenu_type
+PingCommand::getType() const {
+  return dpp::slashcommand_contextmenu_type::ctxm_chat_input;
+}
 
 /*
 */
@@ -73,9 +88,9 @@ chEngineSDK::Vector<chEngineSDK::String>
 
 /*
 */
-std::function<void(const dpp::slashcommand_t&)> 
+InteractionCallback
 {0}Command::getCallback() const {{
-  return std::function<void(const dpp::slashcommand_t&)>();
+  return std::function<void(const dpp::interaction_create_t&)>();
 }}
 }}
 '''

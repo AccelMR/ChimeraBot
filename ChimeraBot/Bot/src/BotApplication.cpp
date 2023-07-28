@@ -56,6 +56,7 @@ BotApp::init(const chEngineSDK::String& token) {
   m_discordBot->on_guild_create([](const dpp::guild_create_t& guild) {});
   m_discordBot->on_ready(std::bind(&BotApp::onClusterReady, this, std::placeholders::_1));
   m_discordBot->on_slashcommand(std::bind(&BotApp::onSlashCommand, this, std::placeholders::_1));
+  m_discordBot->on_message_context_menu(std::bind(&BotApp::onMessageCommand, this, std::placeholders::_1));
 
   try {
     m_discordBot->start();
@@ -95,11 +96,10 @@ BotApp::notifyOwner() {
   });
 }
 
-/*
-*/
-void 
-BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
-  chEngineSDK::String commandName = slashCommand.command.get_command_name();
+template<typename T>
+void BotApp::handleCommand(const T& command, std::queue<std::pair<T, chEngineSDK::SPtr<BaseCommand>>>& queue)
+{
+  chEngineSDK::String commandName = command.command.get_command_name();
 
   // Find the command in the map
   auto it = COMMAND_NAME_TO_TYPE.find(commandName);
@@ -113,36 +113,33 @@ BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
 
   // Command found, lock the mutex and push it to the queue
   std::lock_guard<std::mutex> guard(m_queueMutex);
-  m_commandQueue.emplace(std::make_pair(std::make_unique<dpp::slashcommand_t>(slashCommand), commandInstance));
+  queue.emplace(std::make_pair(command, commandInstance));
 }
 
 /*
 */
-void BotApp::commandDispatcherThread() {
+void 
+BotApp::onSlashCommand(const dpp::slashcommand_t& slashCommand) {
+  handleCommand(slashCommand, m_commandQueue);
+}
+
+/*
+*/
+void 
+BotApp::onMessageCommand(const dpp::message_context_menu_t& messageCommand) {
+  handleCommand(messageCommand, m_commandMessageQueue);
+}
+
+/*
+*/
+void 
+BotApp::commandDispatcherThread() {
   while (m_isDispatcherRunning) {
-    if(m_commandQueue.empty()) continue;
-
-    std::optional<ResponseCommandPair> commandEventPairOpt;
-    {
-      std::lock_guard<std::mutex> guard(m_queueMutex);
-      try {
-        commandEventPairOpt = std::make_optional(std::move(m_commandQueue.front()));
-        m_commandQueue.pop();
-      }
-      catch (const std::exception& e) {
-        LOG_ERROR(e.what());
-      }
-    }
-
-    if (commandEventPairOpt) {
-      auto& commandEventPair = *commandEventPairOpt; 
-      commandEventPair.second->getCallback()(*commandEventPair.first);
-    }
-
-    //Clear pointer
-    commandEventPairOpt.reset();
+    dispatchMessageCommands();
+    dispatchSlashCommands();
   }
 }
+
 
 /*
 */
@@ -152,7 +149,19 @@ BotApp::loadCommands() {
     auto commandInstance = command();  // Call the CommandCreator function to create an instance
     auto exclusiveGuilds = commandInstance->getExclusiveGuilds();
 
-    auto newCommand = dpp::slashcommand(commandInstance->getName(), commandInstance->getDescription(), m_discordBot->me.id);
+    const String commandName = commandInstance->getName();
+    const String  commandDesc = commandInstance->getDescription();
+    const dpp::slashcommand_contextmenu_type  commandType = commandInstance->getType();
+    LOG_INFO("Command loaded: " + commandName);
+    LOG_INFO("Command descrption: " + commandDesc);
+
+    auto newCommand = dpp::slashcommand(commandName, commandDesc, m_discordBot->me.id);
+    newCommand.set_type(commandType);
+
+    for (const auto& option : commandInstance->getOptions()) {
+      newCommand.add_option(option);
+    }
+
     if (exclusiveGuilds.empty()) {
       m_discordBot->global_command_create(newCommand);
     }
@@ -181,10 +190,64 @@ BotApp::onClusterReady(const dpp::ready_t& event) {
 /*
 */
 void 
+BotApp::dispatchSlashCommands() {
+  if (m_commandQueue.empty()) { return; }
+
+  //Thread context starts
+  std::lock_guard<std::mutex> guard(m_queueMutex);
+  try {
+    SlashCommandInteraction commandEventPair = std::move(m_commandQueue.front());
+    m_commandQueue.pop();
+
+    InteractionCallback callback = commandEventPair.second->getCallback();
+    callback(commandEventPair.first);
+  }
+  catch (const std::exception& e) {
+    LOG_ERROR(e.what());
+    return;
+  }
+  //Thread context ends
+}
+
+/*
+*/
+void 
+BotApp::dispatchMessageCommands() {
+  if (m_commandMessageQueue.empty()) { return; }
+
+  //Thread context starts
+  std::lock_guard<std::mutex> guard(m_queueMutex);
+  try {
+    MessageContexCommandtInteraction commandEventPair = std::move(m_commandMessageQueue.front());
+    m_commandMessageQueue.pop();
+
+    InteractionCallback callback = commandEventPair.second->getCallback();
+    callback(commandEventPair.first);
+  }
+  catch (const std::exception& e) {
+    LOG_ERROR(e.what());
+    return;
+  }
+  //Thread context ends
+}
+
+/*
+*/
+void
 BotApp::sendMessage(const dpp::snowflake channel_id, const std::string& message) {
   std::lock_guard<std::mutex> lock(m_sendMessageMutex);
   dpp::message msg(channel_id, message);
   m_discordBot->message_create(msg, [](const dpp::confirmation_callback_t& confirmation) {
+    if (checkIfError(confirmation)) { return; }
+    });
+}
+
+/*
+*/
+void
+BotApp::messageReact(const dpp::message& msg, const chEngineSDK::String& reaction) {
+  std::lock_guard<std::mutex> lock(m_sendMessageMutex);
+  m_discordBot->message_add_reaction(msg, reaction, [](const dpp::confirmation_callback_t& confirmation) {
     if (checkIfError(confirmation)) { return; }
   });
 }

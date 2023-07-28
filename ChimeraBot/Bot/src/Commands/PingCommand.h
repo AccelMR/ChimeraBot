@@ -4,9 +4,13 @@
 #include "Command.h"
 
 namespace chBot {
+
 class PingCommand : public BaseCommand {
-  std::function<void(const dpp::slashcommand_t&)>
+  InteractionCallback
   getCallback() const override;
+
+  virtual dpp::slashcommand_contextmenu_type
+  getType() const override;
 
   // Inherited via BaseCommand
   virtual std::vector<dpp::command_option>
